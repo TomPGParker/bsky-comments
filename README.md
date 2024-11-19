@@ -22,15 +22,18 @@ A minimal version of the comment embed is included.
     <body>
         <div id="comments-container"></div>
         <script>
-            loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
+            //loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
+            loadCommentsURL("bsky.app/profile/kayin.moe/post/3lbb32nb4322g")
         </script>
     </body>
 </html>
 ```
 
-The key point is that you call loadComments with an appropriate info. the `did:plc` bit is your actual user code, which [you could get here](https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=kayin.moe)*(using my handle as an example).*, and the last bit `3lbb32nb4322g` can be replaced by whatever is at the end of the post you want to use. The example thread is filled with different types of embedded content, some of which is or isn't supported.
+The key point is that you call either **loadCommentsURL** or **loadComments** (just uncomment the one you wanna try) with an appropriate info. The `did:plc` bit is your actual user code, which [you could get here](https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=kayin.moe)*(using my handle as an example).*, and the last bit `3lbb32nb4322g` is the Post ID, which can be replaced by whatever string is the end of the post you want to use. 
 
-Depending on your setup, sometimes you need to delay calling loadComments. On my blog I use...
+LoadCommentsURL saves you from worrying about what your DID but it makes two API calls instead of one, so it renders slower. This isn't super important, but it's preferable to use loadCommentsURL if you can hardcode your DID. The 
+
+Depending on your setup, sometimes you need to delay calling either function. On my blog (which is running on grav) I use...
 
 ```html
   <script>
@@ -42,7 +45,11 @@ Depending on your setup, sometimes you need to delay calling loadComments. On my
   </script>
 ```
 
+This also shows a situation where I got my DID set as a public variable so I don't have to worry about it. All I need is my post ID.
+
 The only other important thing is having a div with the id `comments-container`, which will get filled up once everything is pulled down and processed.
+
+If you wanna see how things look, and what works, the example thread is filled with different types of embedded content, some of which is or isn't supported. The **index.html** file will work without a live server, just open it up and poke around.
 
 ### What works
 
@@ -52,10 +59,10 @@ The only other important thing is having a div with the id `comments-container`,
 - Highlights and prioritizes the comments made by the original poster
 
 ### What doesn't work
-- Embedded links and youtube videos
+- Embedded links and youtube videos and stuff *(KINDA implemented, but not really)*
 - Hiding people who don't want to be seen by offline people
 
 ### What needs to be done
 - Clean up the bad LLM code that I used to get started
-- Make it so someone can just provide a post URL and have the script figure out the details.
+- ~~Make it so someone can just provide a post URL and have the script figure out the details.~~
 - Maybe more example implementations? 
