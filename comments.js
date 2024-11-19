@@ -102,6 +102,21 @@ async function loadComments(rootPostId) {
         }
       }
 
+      if (comment.post.embed && comment.post.embed.$type === "app.bsky.embed.record#view") {
+          const embedded = convertURI(comment.post.embed.record.uri);
+          const embedBox = document.createElement("div")
+          embedBox.innerHTML = `<a href="${embedded}"><div class="comment-embedbox">[Link to Quoted Post]</div></a>`;
+          commentDiv.appendChild(embedBox);
+      }
+
+      if (comment.post.embed && comment.post.embed.$type === "app.bsky.embed.external#view") {
+        const embedded = comment.post.embed.external.uri;
+        const embeddedTitle = comment.post.embed.external.title;
+        const embedBox = document.createElement("div")
+        embedBox.innerHTML = `<a href="${embedded}"><div class="comment-embedbox">[Link to <em>${embeddedTitle}<em>]</div></a>`;
+        commentDiv.appendChild(embedBox);
+      }
+
       // Recursively pull out replies to rplies
       if (comment.replies && comment.replies.length > 0) {
         const repliesContainer = document.createElement("div");
