@@ -32,7 +32,7 @@ The key point is that you call loadComments with an appropriate info. the `did:p
 
 Depending on your setup, sometimes you need to delay calling loadComments. On my blog I use...
 
-```
+```html
   <script>
     window.addEventListener('load', (event) => {
       console.log('The page has fully loaded');
