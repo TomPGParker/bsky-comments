@@ -51,6 +51,8 @@ The only other important thing is having a div with the id `comments-container`,
 
 If you wanna see how things look, and what works, the example thread is filled with different types of embedded content, some of which is or isn't supported. The **index.html** file will work without a live server, just open it up and poke around.
 
+You can also see an example [over on my blog](https://kayin.moe/why-play-a-remake)
+
 ### What works
 
 - The basic stuff works!
