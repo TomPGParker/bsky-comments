@@ -61,7 +61,7 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - Highlights and prioritizes the comments made by the original poster
 
 ### What doesn't work
-~~- Embedded links and youtube videos and stuff *(KINDA implemented, but not really)*~~
+- ~~Embedded links and youtube videos and stuff *(KINDA implemented, but not really)*~~
 - Hiding people who don't want to be seen by offline people
 - Any kind of automated posting workflow *(probably will never have one)*
 
