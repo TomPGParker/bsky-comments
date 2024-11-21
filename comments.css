@@ -62,7 +62,6 @@ p.comment-text {
 }
 
 .comment-metrics {
-
     display: flex;
     align-items: center;
 }
@@ -76,7 +75,7 @@ p.comment-text {
     background-color: #c1dcff;
     padding: 1em;
     border-radius: 0.5em;
-    max-width:100%;
+    max-width: 100%;
     border: none;
     color: black;
     font-weight: bold;
@@ -93,16 +92,20 @@ p.comment-text {
     max-width: 100%;
 }
 
-.comment-embedbox-thumb > a {
+.comment-embedbox-thumb>a {
     color: black;
     text-decoration: none;
 }
 
-.comment-embedbox-thumb > a > p {
+.comment-embedbox-thumb p {
     margin: 0px 20px 3px 10px;
 }
 
 .comment-repost {
-    zoom: 80%;
-    margin-left: 6em;
+    margin-left: 4em;
+    font-size: 0.8em;
+}
+
+.comment-repost .comment-avatar {
+    height: 40px;
 }

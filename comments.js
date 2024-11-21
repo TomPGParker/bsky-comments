@@ -31,7 +31,7 @@ async function loadCommentsURL(url) {
   loadComments("at://" + did + "/app.bsky.feed.post/" + post);
 }
 
-// Basic, faster way to load comments
+// Basic, faster way to load comments. It gets called either way.
 async function loadComments(rootPostId) {
   const API_URL = "https://api.bsky.app/xrpc/app.bsky.feed.getPostThread";
   let hostAuthor = ""
@@ -65,9 +65,11 @@ async function loadComments(rootPostId) {
     });
   }
 
+  // Can things be multiple kinds of embeds at once????
   function renderEmbeds(embed) {
     const embedBox = document.createElement("div")
 
+    // I heard you like posts in your posts
     if (embed && embed.$type === "app.bsky.embed.record#view") {
       const embedded = convertURI(embed.record.uri);
       embedBox.classList.add("comment-repost");
@@ -90,9 +92,10 @@ async function loadComments(rootPostId) {
           embedBox.appendChild(link);
         });
       }
-    }  
+    }
 
-    if (embed && embed.$type ==="app.bsky.embed.external#view") {
+    // Links and stuff, using Bluesky's preview images. I need to find a good link without an image card to test the Else.
+    if (embed && embed.$type === "app.bsky.embed.external#view") {
       const link = embed.external;
       const linkThumb = embed.external.thumb;
       const linkTitle = embed.external.title;
@@ -104,47 +107,44 @@ async function loadComments(rootPostId) {
               <p><strong>${linkTitle}</strong></p>
               <p>${link.description}</p>
             </a>
-          </div>`;      
+          </div>`;
       } else {
         embedBox.innerHTML = `<a href="${link}"><div class="comment-embedbox">[Link to <em>${linkTitle}<em>]</div></a>`;
       }
-    }  
+    }
 
     return embedBox
   }
 
+  // Renders 1(one) post. Might be worth making this easier to call for single post embeds.
   function renderPost(comment) {
     const post = document.createElement("div");
     post.classList.add("comment-box");
-    
-    const author = comment.post?.author ?? comment.record?.author;
-    const record = comment.post?.record ?? comment.record?.value;
-    const uri = comment.post?.uri ?? comment.record?.uri;
+
+    // Embeds and Posts have data in slightly different places. This feels flimsy? 
+    const author = comment.post?.author ?? comment.record?.author ?? "";
+    const record = comment.post?.record ?? comment.record?.value ?? "";
+    const embeds = comment.post?.embed ?? comment.record?.embeds[0] ?? "";
+    const uri = comment.post?.uri ?? comment.record?.uri ?? "";
 
     // So the host can get fancy CSS and look extra important
     if (author.displayName == hostAuthor) {
       post.classList.add("comment-host");
     }
 
-    post.innerHTML = `
-    <div class="comment-innerbox">
+    post.innerHTML = `<div class="comment-innerbox">
     <img class="comment-avatar" src="${author.avatar}"><div>
     <span class="comment-meta">By <a href="https://bsky.app/profile/${author.handle}">
         ${author.displayName || author.handle || "Unknown"}
     </a> on <a href="${convertURI(uri)}">${new Date(record?.createdAt || Date.now()).toLocaleString()}</a></span>
     <p class="comment-text">${record?.text}<p></div></div>`;
 
-    if (comment.post) {
-      console.log(comment.post.embed);
-      post.appendChild(renderEmbeds(comment.post.embed));   
-    } else {
-      console.log(comment.record.embeds);
-      post.appendChild(renderEmbeds(comment.record.embeds[0]));         
-    }
- 
+    post.appendChild(renderEmbeds(embeds));
+
     return post;
   }
 
+  // TO-DO... options? Newest first? No prioritization? Author Override?
   function sortComments(comments) {
     const prioritizedReplies = comments.filter(
       comment => comment.post?.author?.displayName === hostAuthor
@@ -157,7 +157,7 @@ async function loadComments(rootPostId) {
     return orderedComments;
   }
 
-
+  // Iterates through the whole thread.
   function renderComments(comments, container, hiddenReplies) {
     const orderedComments = sortComments(comments);
 
@@ -192,15 +192,18 @@ async function loadComments(rootPostId) {
   if (commentData && commentData.thread) {
     const postURL = convertURI(rootPostId);
     const commentHidden = [];
+    
     if (commentData.threadgate?.record?.hiddenReplies) {
       commentHidden.push(...commentData.threadgate.record.hiddenReplies);
     }
+
+    // Should all this header/metrics stuff be somewhere else?
     const container = document.getElementById("comments-container");
     container.innerHTML = `<p class="comment-metricsbox"><a class="comment-metricslink" href="${postURL}">
     <span class="comment-metrics">${heart} ${commentData.thread.post.likeCount} Likes</span> 
     <span class="comment-metrics">${repost} ${commentData.thread.post.repostCount + commentData.thread.post.quoteCount} Reposts</span>
     <span class="comment-metrics">${reply} ${commentData.thread.post.replyCount} Replies</span></a>
-    <h3>Comments</h3>
+    <a style="color: inherit;text-decoration: inherit" href="#comments-container"><div><h3>Comments</h3></div></a>
     Reply on Bluesky <a href="${postURL}">to this post</a> to add a Comment   
     </p>`;
 
