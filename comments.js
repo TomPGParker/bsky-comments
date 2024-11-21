@@ -65,9 +65,87 @@ async function loadComments(rootPostId) {
     });
   }
 
-  function renderComments(comments, container, hiddenReplies) {
-    // Prioritizes the host author's post.
-    // TO-DO make this optional? Author highlight override?
+  function renderEmbeds(embed) {
+    const embedBox = document.createElement("div")
+
+    if (embed && embed.$type === "app.bsky.embed.record#view") {
+      const embedded = convertURI(embed.record.uri);
+      embedBox.classList.add("comment-repost");
+      embedBox.appendChild(renderPost(embed));
+    }
+
+    // Better Mason view/Cover CSS?
+    if (embed && embed.$type === "app.bsky.embed.images#view") {
+      const images = embed.images;
+      if (images && images.length > 0) {
+        embedBox.classList.add("comment-imagebox")
+        images.forEach(image => {
+          const img = document.createElement("img");
+          const link = document.createElement("a");
+          link.href = image.fullsize;
+          img.src = image.thumb;
+          img.alt = image.alt || "Image attachment";
+          img.classList.add("comment-image");
+          link.appendChild(img);
+          embedBox.appendChild(link);
+        });
+      }
+    }  
+
+    if (embed && embed.$type ==="app.bsky.embed.external#view") {
+      const link = embed.external;
+      const linkThumb = embed.external.thumb;
+      const linkTitle = embed.external.title;
+      if (embed.external.thumb) {
+        embedBox.innerHTML = `
+          <div class="comment-embedbox-thumb">
+            <a href="${link.uri}">
+              <img src="${linkThumb}">
+              <p><strong>${linkTitle}</strong></p>
+              <p>${link.description}</p>
+            </a>
+          </div>`;      
+      } else {
+        embedBox.innerHTML = `<a href="${link}"><div class="comment-embedbox">[Link to <em>${linkTitle}<em>]</div></a>`;
+      }
+    }  
+
+    return embedBox
+  }
+
+  function renderPost(comment) {
+    const post = document.createElement("div");
+    post.classList.add("comment-box");
+    
+    const author = comment.post?.author ?? comment.record?.author;
+    const record = comment.post?.record ?? comment.record?.value;
+    const uri = comment.post?.uri ?? comment.record?.uri;
+
+    // So the host can get fancy CSS and look extra important
+    if (author.displayName == hostAuthor) {
+      post.classList.add("comment-host");
+    }
+
+    post.innerHTML = `
+    <div class="comment-innerbox">
+    <img class="comment-avatar" src="${author.avatar}"><div>
+    <span class="comment-meta">By <a href="https://bsky.app/profile/${author.handle}">
+        ${author.displayName || author.handle || "Unknown"}
+    </a> on <a href="${convertURI(uri)}">${new Date(record?.createdAt || Date.now()).toLocaleString()}</a></span>
+    <p class="comment-text">${record?.text}<p></div></div>`;
+
+    if (comment.post) {
+      console.log(comment.post.embed);
+      post.appendChild(renderEmbeds(comment.post.embed));   
+    } else {
+      console.log(comment.record.embeds);
+      post.appendChild(renderEmbeds(comment.record.embeds[0]));         
+    }
+ 
+    return post;
+  }
+
+  function sortComments(comments) {
     const prioritizedReplies = comments.filter(
       comment => comment.post?.author?.displayName === hostAuthor
     );
@@ -76,7 +154,12 @@ async function loadComments(rootPostId) {
     );
 
     const orderedComments = [...prioritizedReplies, ...sortCommentsByTime(otherReplies)];
+    return orderedComments;
+  }
 
+
+  function renderComments(comments, container, hiddenReplies) {
+    const orderedComments = sortComments(comments);
 
     orderedComments.forEach(comment => {
       if (!comment.post) {
@@ -90,68 +173,7 @@ async function loadComments(rootPostId) {
         return;
       }
 
-      const commentDiv = document.createElement("div");
-      commentDiv.classList.add("comment-box");
-
-      // So the host can get fancy CSS and look extra important
-      if (comment.post.author.displayName == hostAuthor) {
-        commentDiv.classList.add("comment-host");
-      }
-
-      // For stuff like user name and timestamps
-      const post = document.createElement("div");
-      post.classList.add("comment-innerbox");
-      const url = convertURI(comment.post.uri);
-
-      // TO-DO is there a way to do this with templates that won't require external dependancies?
-      post.innerHTML = `
-              <img class="comment-avatar" src="${comment.post.author.avatar}"><div>
-              <span class="comment-meta">By <a href="https://bsky.app/profile/${comment.post.author?.handle}">
-                  ${comment.post.author?.displayName || comment.post.author?.handle || "Unknown"}
-              </a> on <a href="${url}">${new Date(comment.post.record?.createdAt || Date.now()).toLocaleString()}</a></span>
-              <p class="comment-text">${comment.post.record?.text}<p></div>
-              `;
-
-      commentDiv.appendChild(post);
-      container.appendChild(commentDiv);
-
-      // Handles image attachments
-      if (comment.post.embed && comment.post.embed.$type === "app.bsky.embed.images#view") {
-        const images = comment.post.embed.images;
-        if (images && images.length > 0) {
-          const imageBox = document.createElement("div");
-          imageBox.classList.add("comment-imagebox")
-          images.forEach(image => {
-            const img = document.createElement("img");
-            const link = document.createElement("a");
-            link.href = image.fullsize;
-            img.src = image.thumb;
-            img.alt = image.alt || "Image attachment";
-            img.classList.add("comment-image");
-            link.appendChild(img);
-            imageBox.appendChild(link);
-          });
-          commentDiv.appendChild(imageBox);
-        }
-      }
-
-      // Handles Quoted Posts... Barely.
-      // Definitely a TO-DO item to actually embed the post, even if it'd make things render even slower.
-      if (comment.post.embed && comment.post.embed.$type === "app.bsky.embed.record#view") {
-        const embedded = convertURI(comment.post.embed.record.uri);
-        const embedBox = document.createElement("div")
-        embedBox.innerHTML = `<a href="${embedded}"><div class="comment-embedbox">[Link to Quoted Post]</div></a>`;
-        commentDiv.appendChild(embedBox);
-      }
-
-      // Handles External Links. I don't think this could reasonably be made fancier.
-      if (comment.post.embed && comment.post.embed.$type === "app.bsky.embed.external#view") {
-        const embedded = comment.post.embed.external.uri;
-        const embeddedTitle = comment.post.embed.external.title;
-        const embedBox = document.createElement("div")
-        embedBox.innerHTML = `<a href="${embedded}"><div class="comment-embedbox">[Link to <em>${embeddedTitle}<em>]</div></a>`;
-        commentDiv.appendChild(embedBox);
-      }
+      container.appendChild(renderPost(comment));
 
       // Recursively pull out replies to replies
       if (comment.replies && comment.replies.length > 0) {

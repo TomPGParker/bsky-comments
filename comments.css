@@ -81,3 +81,28 @@ p.comment-text {
     color: black;
     font-weight: bold;
 }
+
+.comment-embedbox-thumb {
+    border: 1px solid #c8c8c8;
+    background-color: whitesmoke;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.comment-embedbox-thumb img {
+    max-width: 100%;
+}
+
+.comment-embedbox-thumb > a {
+    color: black;
+    text-decoration: none;
+}
+
+.comment-embedbox-thumb > a > p {
+    margin: 0px 20px 3px 10px;
+}
+
+.comment-repost {
+    zoom: 80%;
+    margin-left: 6em;
+}
