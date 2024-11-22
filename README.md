@@ -31,7 +31,7 @@ A minimal version of the comment embed is included.
 
 The key point is that you call either **loadCommentsURL** or **loadComments** (just uncomment the one you wanna try) with an appropriate info. The `did:plc` bit is your actual user code, which [you could get here](https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=kayin.moe)*(using my handle as an example).*, and the last bit `3lbb32nb4322g` is the Post ID, which can be replaced by whatever string is the end of the post you want to use. 
 
-LoadCommentsURL saves you from worrying about what your DID but it makes two API calls instead of one, so it renders slower. This isn't super important, but it's preferable to use loadCommentsURL if you can hardcode your DID. The 
+LoadCommentsURL saves you from worrying about what your DID but it makes two API calls instead of one, so it renders slower. This isn't super important, but it's preferable to use loadCommentsURL if you can hardcode your DID. The difference in speed is pretty significant, a second or two vs almost instant, but in the context of a comment section under a blog post this might not matter much for you.
 
 Depending on your setup, sometimes you need to delay calling either function. On my blog (which is running on grav) I use...
 
