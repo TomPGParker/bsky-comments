@@ -4,14 +4,14 @@ let repost = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 2
 let reply  = `<svg xmlns="http://www.w3.org/2000/svg" fill="#7FBADC" viewBox="0 0 24 24" stroke-width="1.5" stroke="#7FBADC" class="size-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"></path></svg>`
 
 let postTemplate   = null; // Change by doing something like: loadCommentTemplate("comments.template.html")
-let metricTemplate = null; // Same Deal, but with loadMetricTemplate
+let headerTemplate = null; // Same Deal, but with loadHeaderTemplate
 
 async function loadCommentTemplate(url) {
   postTemplate = await loadTemplate(url);
 }
 
-async function loadMetricTemplate(url) {
-  metricTemplate = await loadTemplate(url);
+async function loadHeaderTemplate(url) {
+  headerTemplate = await loadTemplate(url);
 }
 
 // loads optional templates
@@ -21,7 +21,7 @@ async function loadTemplate(url) {
 }
 
 // finds the user DID and loads the comments automatically from a simple URL
-async function loadCommentsURL(url) {
+async function loadCommentsURL(url, options={}) {
   const API_URL = "https://bsky.social/xrpc/com.atproto.identity.resolveHandle";
   const trimmed = url.split("/profile/").slice(1).join("");
   const user = trimmed.split("/post/")[0];
@@ -45,11 +45,12 @@ async function loadCommentsURL(url) {
 
   const did = await getDID(user);
   console.log(did);
-  loadComments("at://" + did + "/app.bsky.feed.post/" + post);
+  loadComments("at://" + did + "/app.bsky.feed.post/" + post, options);
 }
 
 // Basic, faster way to load comments. It gets called either way.
-async function loadComments(rootPostId) {
+// if options has a renderOptions key, its value is passed to renderComments.
+async function loadComments(rootPostId, options={}) {
   const API_URL = "https://api.bsky.app/xrpc/app.bsky.feed.getPostThread";
   let hostAuthor = ""
 
@@ -86,14 +87,53 @@ async function loadComments(rootPostId) {
     return (url);
   }
 
-  // TO-DO make this optional??? Sort type?
-  function sortCommentsByTime(comments) {
-    return comments.sort((a, b) => {
-      const timeA = new Date(a.post.record?.createdAt).getTime();
-      const timeB = new Date(b.post.record?.createdAt).getTime();
-      return timeA - timeB; // Ascending order
-    });
+  //See: https://docs.bsky.app/docs/advanced-guides/timestamps#sortat
+  function calculateSortAtTimestamp(post) {
+    createdAt = new Date(post.record?.createdAt).getTime();
+    indexedAt = new Date(post?.indexedAt).getTime();
+    if (createdAt < 0) {
+      return 0;
+    } else if (createdAt <= indexedAt) {
+      return createdAt;
+    } else if (createdAt > indexedAt) {
+      return indexedAt;
+    }
   }
+
+  // See: https://docs.bsky.app/docs/advanced-guides/timestamps
+  // Default to 'sortAt' but allow specifying other timestamps.
+  function sortCommentsByTime(comments, options) {
+    let tsKey = options?.tsKey ?? 'sortAt';
+    let order = options?.order ?? 'asc';
+
+    if (!['sortAt', 'createdAt', 'indexedAt'].includes(tsKey)) {
+        // Invalid ts key value
+        console.log("Invalid tsKey value " + tsKey + " passed to sortCommentsByTime! Setting to default value 'sortAt'.");
+        tsKey = 'sortAt';
+    }
+
+    if (!['asc', 'desc'].includes(order)) {
+        // Invalid order value
+        console.log("Invalid order value " + order + " passed to sortCommentsByTime! Setting to default value 'asc'.");
+        order = 'asc';
+    }
+
+    // Sort Order Fuckery
+    const sortMultiplier = order === 'asc' ? 1 : -1;
+
+    return comments.sort((a, b) => {
+        if (tsKey === 'sortAt') {
+            // Calculate sortAt timestamp
+            const timeA = calculateSortAtTimestamp(a.post);
+            const timeB = calculateSortAtTimestamp(b.post);
+            return (timeA - timeB) * sortMultiplier;
+        } else {
+            const timeA = new Date(a.post.record?.[tsKey]).getTime();
+            const timeB = new Date(b.post.record?.[tsKey]).getTime();
+            return (timeA - timeB) * sortMultiplier;
+        }
+    });
+}
 
   // Can things be multiple kinds of embeds at once????
   function renderEmbeds(embed) {
@@ -157,7 +197,7 @@ async function loadComments(rootPostId) {
     const embeds = comment.post?.embed ?? comment.record?.embeds[0] ?? "";
     const uri = comment.post?.uri ?? comment.record?.uri ?? "";
 
-  // Use custom template if available
+  // Render Comments with either the default or an external file
   const template = postTemplate || `
     <div class="comment-innerbox">
       <img class="comment-avatar" src="{{avatar}}">
@@ -173,7 +213,6 @@ async function loadComments(rootPostId) {
     </div>
   `;
 
-  // Replace placeholders dynamically
   post.innerHTML = template
     .replace("{{avatar}}", author.avatar || "")
     .replace("{{name}}", author.displayName || author.handle || "Unknown")
@@ -186,8 +225,10 @@ async function loadComments(rootPostId) {
   return post;
 }
 
-  // TO-DO... options? Newest first? No prioritization? Author Override?
-  function sortComments(comments) {
+  // TO-DO... No prioritization? Author Override?
+  // if options contains a "tsKey" key, its value is passed to sortCommentsbyTime.
+  function sortComments(comments, options={}) {
+
     const prioritizedReplies = comments.filter(
       comment => comment.post?.author?.displayName === hostAuthor
     );
@@ -195,13 +236,14 @@ async function loadComments(rootPostId) {
       comment => comment.post?.author?.displayName !== hostAuthor
     );
 
-    const orderedComments = [...prioritizedReplies, ...sortCommentsByTime(otherReplies)];
+    const orderedComments = [...prioritizedReplies, ...sortCommentsByTime(otherReplies, options)];
     return orderedComments;
   }
 
   // Iterates through the whole thread.
-  function renderComments(comments, container, hiddenReplies) {
-    const orderedComments = sortComments(comments);
+  // if options contains a "sortOptions" key, its value is passed to sortComments
+  function renderComments(comments, container, hiddenReplies, options={}) {
+    const orderedComments = sortComments(comments, options?.sortOptions);
 
     orderedComments.forEach(comment => {
       if (!comment.post) {
@@ -221,13 +263,17 @@ async function loadComments(rootPostId) {
       if (comment.replies && comment.replies.length > 0) {
         const repliesContainer = document.createElement("div");
         repliesContainer.classList.add("comment-replies");
-        renderComments(sortCommentsByTime(comment.replies), repliesContainer, hiddenReplies);
+        renderComments(sortCommentsByTime(comment.replies, options?.sortOptions), repliesContainer, hiddenReplies, options);
         container.appendChild(repliesContainer);
       }
     });
   }
 
   // Actual Logic begins here!!
+
+  // Loads Custom Templates from option object
+  if (options?.renderOptions?.commentTemplate) { loadCommentTemplate(options.renderOptions.commentTemplate); }
+  if (options?.renderOptions?.headerTemplate)  { loadHeaderTemplate(options.renderOptions.headerTemplate); }
 
   const commentData = await fetchComments(rootPostId);
 
@@ -239,8 +285,9 @@ async function loadComments(rootPostId) {
       commentHidden.push(...commentData.threadgate.record.hiddenReplies);
     }
 
+    // Render Header with either the default or an external file
     const container = document.getElementById("comments-container");
-    const template = metricTemplate || `
+    const template = headerTemplate || `
       <p class="comment-metricsbox"><a class="comment-metricslink" href="{{url}}">
         <span class="comment-metrics">{{heart}} {{likeCount}} Likes</span> 
         <span class="comment-metrics">{{repost}} {{repostCount}} Reposts</span>
@@ -261,7 +308,7 @@ async function loadComments(rootPostId) {
     // Render only replies, omitting the root post
     if (commentData.thread.replies && commentData.thread.replies.length > 0) {
       hostAuthor = commentData.thread.post.author.displayName
-      renderComments(sortCommentsByTime(commentData.thread.replies), container, commentHidden);
+      renderComments(sortCommentsByTime(commentData.thread.replies, options?.renderOptions?.sortOptions), container, commentHidden, options?.renderOptions);
     }
   }
 }
