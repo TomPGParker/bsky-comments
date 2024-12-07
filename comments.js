@@ -68,19 +68,6 @@ async function loadComments(rootPostId, options={}) {
     }
   }
 
-  async function fetchTemplate(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to load template: ${url}`);
-    return response.text();
-  }
-  
-  function replacePlaceholders(template, data) {
-    return Object.entries(data).reduce(
-      (output, [key, value]) => output.replaceAll(`{{${key}}}`, value ?? ''),
-      template
-    );
-  }
-
   // Converts one of those at:// uris into an actual link usable by humans
   function convertURI(uri) {
     const url = uri.replace("at://", "https://bsky.app/profile/").replace("/app.bsky.feed.post/", "/post/");
@@ -211,7 +198,11 @@ async function loadComments(rootPostId, options={}) {
         <p class="comment-text">{{text}}</p>
       </div>
     </div>
+    {{embeds}}
   `;
+
+  // Prep Embds
+  const embedsHTML = renderEmbeds(embeds)?.outerHTML || "";
 
   post.innerHTML = template
     .replace("{{avatar}}", author.avatar || "")
@@ -220,8 +211,8 @@ async function loadComments(rootPostId, options={}) {
     .replace("{{text}}", record?.text || "")
     .replace("{{date}}", new Date(record?.createdAt || Date.now()).toLocaleString())
     .replace("{{url}}", convertURI(uri))
+    .replace("{{embeds}}",embedsHTML)
 
-  post.appendChild(renderEmbeds(embeds));
   return post;
 }
 
