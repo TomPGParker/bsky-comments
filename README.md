@@ -22,7 +22,7 @@ A minimal version of the comment embed is included.
     <body>
         <div id="comments-container"></div>
         <script>
-            //loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
+            //loadComments("at://did:plc:scmcyemdposb4v`uidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
             loadCommentsURL("bsky.app/profile/kayin.moe/post/3lbb32nb4322g")
         </script>
     </body>
@@ -70,3 +70,5 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - ~~Make it so someone can just provide a post URL and have the script figure out the details.~~
 - Better Handling of multi image threads
 - Maybe more example implementations? 
+
+This project is under the Unlicense. You can do what you will with it and modify it as you like. I feel like you have to modify it to do anything useful with it. You are under no obligation to credit me or send any feature improvements back, but please consider it! Also while you don't gotta, I'd love if you told me if you used this over [on bluesky](https://bsky.app/profile/kayin.moe).
