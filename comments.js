@@ -205,13 +205,13 @@ async function loadComments(rootPostId, options={}) {
   const embedsHTML = renderEmbeds(embeds)?.outerHTML || "";
 
   post.innerHTML = template
-    .replace("{{avatar}}", author.avatar || "")
-    .replace("{{name}}", author.displayName || author.handle || "Unknown")
-    .replace("{{handle}}", author.handle || "")
-    .replace("{{text}}", record?.text || "")
-    .replace("{{date}}", new Date(record?.createdAt || Date.now()).toLocaleString())
-    .replace("{{url}}", convertURI(uri))
-    .replace("{{embeds}}",embedsHTML)
+    .replace(/{{avatar}}/g, author.avatar || "")
+    .replace(/{{name}}/g, author.displayName || author.handle || "Unknown")
+    .replace(/{{handle}}/g, author.handle || "")
+    .replace(/{{text}}/g, record?.text || "")
+    .replace(/{{date}}/g, new Date(record?.createdAt || Date.now()).toLocaleString())
+    .replace(/{{url}}/g, convertURI(uri))
+    .replace(/{{embeds}}/g,embedsHTML)
 
   return post;
 }
@@ -288,13 +288,13 @@ async function loadComments(rootPostId, options={}) {
       </p>`;
 
     container.innerHTML = template
-      .replace("{{heart}}", heart || "")
-      .replace("{{repost}}", repost || "")
-      .replace("{{reply}}", reply || "")
-      .replace("{{likeCount}}", commentData.thread.post.likeCount || "")
-      .replace("{{repostCount}}", commentData.thread.post.repostCount + commentData.thread.post.quoteCount || "")
-      .replace("{{replyCount}}", commentData.thread.post.replyCount) || ""
-      .replace("{{url}}", postURL || "");
+      .replace(/{{heart}}/g, heart || "")
+      .replace(/{{repost}}/g, repost || "")
+      .replace(/{{reply}}/g, reply || "")
+      .replace(/{{url}}/g, postURL || "")
+      .replace(/{{likeCount}}/g, commentData.thread.post.likeCount || "")
+      .replace(/{{repostCount}}/g, commentData.thread.post.repostCount + commentData.thread.post.quoteCount || "")
+      .replace(/{{replyCount}}/g, commentData.thread.post.replyCount || "")
 
     // Render only replies, omitting the root post
     if (commentData.thread.replies && commentData.thread.replies.length > 0) {
