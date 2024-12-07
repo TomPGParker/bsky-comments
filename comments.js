@@ -211,7 +211,11 @@ async function loadComments(rootPostId, options={}) {
         <p class="comment-text">{{text}}</p>
       </div>
     </div>
+    {{embeds}}
   `;
+
+  // Prep Embds
+  const embedsHTML = renderEmbeds(embeds)?.outerHTML || "";
 
   post.innerHTML = template
     .replace("{{avatar}}", author.avatar || "")
@@ -220,8 +224,8 @@ async function loadComments(rootPostId, options={}) {
     .replace("{{text}}", record?.text || "")
     .replace("{{date}}", new Date(record?.createdAt || Date.now()).toLocaleString())
     .replace("{{url}}", convertURI(uri))
+    .replace("{{embeds}}",embedsHTML)
 
-  post.appendChild(renderEmbeds(embeds));
   return post;
 }
 
