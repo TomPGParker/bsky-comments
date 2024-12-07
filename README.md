@@ -22,8 +22,10 @@ A minimal version of the comment embed is included.
     <body>
         <div id="comments-container"></div>
         <script>
-            //loadComments("at://did:plc:scmcyemdposb4v`uidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
-            loadCommentsURL("bsky.app/profile/kayin.moe/post/3lbb32nb4322g")
+            //loadCommentTemplate("comments.template.html")
+            //loadMetricTemplate("metrics.template.html")
+            loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
+            //loadCommentsURL("bsky.app/profile/kayin.moe/post/3lbb32nb4322g")
         </script>
     </body>
 </html>
@@ -32,6 +34,8 @@ A minimal version of the comment embed is included.
 The key point is that you call either **loadCommentsURL** or **loadComments** (just uncomment the one you wanna try) with an appropriate info. The `did:plc` bit is your actual user code, which [you could get here](https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=kayin.moe)*(using my handle as an example).*, and the last bit `3lbb32nb4322g` is the Post ID, which can be replaced by whatever string is the end of the post you want to use. 
 
 LoadCommentsURL saves you from worrying about what your DID but it makes two API calls instead of one, so it renders slower. This isn't super important, but it's preferable to use loadCommentsURL if you can hardcode your DID. The difference in speed is pretty significant, a second or two vs almost instant, but in the context of a comment section under a blog post this might not matter much for you.
+
+You also have access to very simple **templates**, which you can invoke with **loadCommentTemplate**(for the comments) and **loadMetricTemplate**(for the header), giving a bit more flexibility. The included example templates are the default, but these files are not needed by the script if you want to run with completely default settings.
 
 Depending on your setup, sometimes you need to delay calling either function. On my blog (which is running on grav) I use...
 
@@ -59,6 +63,7 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - Embeds work
 - Posts hidden on a thread will be hidden here!
 - Highlights and prioritizes the comments made by the original poster
+- Templates!
 
 ### What doesn't work
 - ~~Embedded links and youtube videos and stuff *(KINDA implemented, but not really)*~~
