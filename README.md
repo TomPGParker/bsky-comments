@@ -93,6 +93,12 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - ~~Clean up the bad LLM code that I used to get started~~ *(kinda rewrote a bunch???)*
 - ~~Make it so someone can just provide a post URL and have the script figure out the details.~~
 - Better Handling of multi image threads
-- Maybe more example implementations? 
+- Maybe more example implementations?
+
+## Embedding on Sites with strict CORS rules
+
+Unfortunately this doesn't work out of the box on neocities. Most commentbox packages gets around this by embedding comments in an iframe. I have a very simple implication hosted on [github pages that you can use](https://github.com/Kayinnasaki/comment-embed). You can also clone that repo and publish it yourself to customize it further.
+
+## License
 
 This project is under the Unlicense. You can do what you will with it and modify it as you like. I feel like you have to modify it to do anything useful with it. You are under no obligation to credit me or send any feature improvements back, but please consider it! Also while you don't gotta, I'd love if you told me if you used this over [on bluesky](https://bsky.app/profile/kayin.moe).
