@@ -6,6 +6,15 @@ let reply  = `<svg xmlns="http://www.w3.org/2000/svg" fill="#7FBADC" viewBox="0 
 let postTemplate   = null; // Change by doing something like: loadCommentTemplate("comments.template.html")
 let headerTemplate = null; // Same Deal, but with loadHeaderTemplate
 
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 async function loadCommentTemplate(url) {
   postTemplate = await loadTemplate(url);
 }
@@ -206,9 +215,9 @@ async function loadComments(rootPostId, options={}) {
 
   post.innerHTML = template
     .replace(/{{avatar}}/g, author.avatar || "")
-    .replace(/{{name}}/g, author.displayName || author.handle || "Unknown")
+    .replace(/{{name}}/g, escapeHTML(author.displayName || author.handle || "Unknown"))
     .replace(/{{handle}}/g, author.handle || "")
-    .replace(/{{text}}/g, record?.text || "")
+    .replace(/{{text}}/g, escapeHTML(record?.text || ""))
     .replace(/{{date}}/g, new Date(record?.createdAt || Date.now()).toLocaleString())
     .replace(/{{url}}/g, convertURI(uri))
     .replace(/{{embeds}}/g,embedsHTML)
