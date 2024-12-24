@@ -193,6 +193,11 @@ async function loadComments(rootPostId, options={}) {
     const embeds = comment.post?.embed ?? comment.record?.embeds[0] ?? "";
     const uri = comment.post?.uri ?? comment.record?.uri ?? "";
 
+    // So the host can get fancy CSS and look extra important
+    if (author.displayName == hostAuthor) {
+      post.classList.add("comment-host");
+    }
+
   // Render Comments with either the default or an external file
   const template = postTemplate || `
     <div class="comment-innerbox">
@@ -228,16 +233,21 @@ async function loadComments(rootPostId, options={}) {
   // TO-DO... No prioritization? Author Override?
   // if options contains a "tsKey" key, its value is passed to sortCommentsbyTime.
   function sortComments(comments, options={}) {
+    console.log(options)
+    if (options?.priority === "none") {
+      const orderedComments = [...sortCommentsByTime(comments, options)];
+      return orderedComments;
+    } else {
+      const prioritizedReplies = comments.filter(
+        comment => comment.post?.author?.displayName === hostAuthor
+      );
+      const otherReplies = comments.filter(
+        comment => comment.post?.author?.displayName !== hostAuthor
+      );
 
-    const prioritizedReplies = comments.filter(
-      comment => comment.post?.author?.displayName === hostAuthor
-    );
-    const otherReplies = comments.filter(
-      comment => comment.post?.author?.displayName !== hostAuthor
-    );
-
-    const orderedComments = [...prioritizedReplies, ...sortCommentsByTime(otherReplies, options)];
-    return orderedComments;
+      const orderedComments = [...prioritizedReplies, ...sortCommentsByTime(otherReplies, options)];
+      return orderedComments;
+    }
   }
 
   // Iterates through the whole thread.
@@ -308,6 +318,13 @@ async function loadComments(rootPostId, options={}) {
     // Render only replies, omitting the root post
     if (commentData.thread.replies && commentData.thread.replies.length > 0) {
       hostAuthor = commentData.thread.post.author.displayName
+
+      // Override host for comment prioritization. Should use DID but right now i'm lazy and just want "none" to work
+      // To-Do: Have it figure out if its a DID or a handle and precede accordingly.
+      if (options?.renderOptions?.sortOptions?.priority && options?.renderOptions?.sortOptions?.priority  !== "none") {
+        hostAuthor = options.renderOptions.sortOptions.priority ;
+      }
+
       renderComments(sortCommentsByTime(commentData.thread.replies, options?.renderOptions?.sortOptions), container, commentHidden, options?.renderOptions);
     }
   }

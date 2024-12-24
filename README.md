@@ -51,10 +51,11 @@ You also have access to very simple **templates**, which you can invoke with **l
 These can be folded up into an object that can be sent with loadComments like 
 
 ```js
-loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "sortOptions": { "tsKey": 'createdAt', "order": 'desc' } } })
+loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "sortOptions": { "tsKey": 'createdAt', "order": 'desc', "priority": 'none' } } })
 ```
 
 **sortOptions** include setting the tsKey for sorting. Bluesky posts can *lie* so using **createdAt** can sort posts by their actual creation date, not their display date. **order** can be 'asc' or 'desc'. `asc` is the default you'd expect, but `desc` puts newest posts first.
+**priority** can be 'none', which turns off sorting (though host posts will still be hilighted through CSS), or a users handle. It really should take a DID, but this is a little unfinished and a much more niche feature.
 
 Depending on your setup, sometimes you need to delay calling either function. On my blog (which is running on grav) I use...
 
@@ -82,6 +83,7 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - Embeds work
 - Posts hidden on a thread will be hidden here!
 - Highlights and prioritizes the comments made by the original poster
+- Different sorting options
 - Templates!
 
 ### What doesn't work
@@ -90,8 +92,6 @@ You can also see an example [over on my blog](https://kayin.moe/why-play-a-remak
 - Any kind of automated posting workflow *(probably will never have one)*
 
 ### What needs to be done
-- ~~Clean up the bad LLM code that I used to get started~~ *(kinda rewrote a bunch???)*
-- ~~Make it so someone can just provide a post URL and have the script figure out the details.~~
 - Better Handling of multi image threads
 - Maybe more example implementations?
 
