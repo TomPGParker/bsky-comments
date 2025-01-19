@@ -33,10 +33,11 @@ A minimal version of the comment embed is included.
         // Sets custom templates before loading comments
         //loadCommentTemplate("comments.template.html")
         //loadMetricTemplate("metrics.template.html")
+        //loadSubTemplate("sub.template.html")
         //loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g")
 
         // Sets custom options as an object, including sorting by creation date, as well as having descending posts
-        //loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "sortOptions": { "tsKey": 'createdAt', "order": 'desc' } } })
+        //loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "subTemplate": 'sub.template.html', "mergechains": true, "sortOptions": { "tsKey": 'createdAt', "order": 'desc' } } })
     </script>
 </body>
 </html>
@@ -46,12 +47,12 @@ The key point is that you call either **loadCommentsURL** or **loadComments** (j
 
 LoadCommentsURL saves you from worrying about what your DID but it makes two API calls instead of one, so it renders slower. This isn't super important, but it's preferable to use loadCommentsURL if you can hardcode your DID. The difference in speed is pretty significant, a second or two vs almost instant, but in the context of a comment section under a blog post this might not matter much for you.
 
-You also have access to very simple **templates**, which you can invoke with **loadCommentTemplate**(for the comments) and **loadMetricTemplate**(for the header), giving a bit more flexibility. The included example templates are the default, but these files are not needed by the script if you want to run with completely default settings.
+You also have access to very simple **templates**, which you can invoke with **loadCommentTemplate**(for the comments),**loadMetricTemplate**(for the header), and **loadSubTemplate**(for the divider between merged posts) giving a bit more flexibility. The included example templates are the default, but these files are not needed by the script if you want to run with completely default settings.
 
 These can be folded up into an object that can be sent with loadComments like 
 
 ```js
-loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "sortOptions": { "tsKey": 'createdAt', "order": 'desc', "priority": 'none' } } })
+loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4322g", { "renderOptions": { "commentTemplate": 'comments.template.html', "headerTemplate": 'header.template.html', "mergechains": true, "sortOptions": { "tsKey": 'createdAt', "order": 'desc', "priority": 'none' } } })
 ```
 
 **sortOptions** include setting the tsKey for sorting. Bluesky posts can *lie* so using **createdAt** can sort posts by their actual creation date, not their display date. **order** can be 'asc' or 'desc'. `asc` is the default you'd expect, but `desc` puts newest posts first.
@@ -60,16 +61,22 @@ loadComments("at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/3lbb32nb4
 Depending on your setup, sometimes you need to delay calling either function. On my blog (which is running on grav) I use...
 
 ```html
+<div id="comments-container">
+  <script src="/etc/bsky/comments.js"></script> 
   <script>
     window.addEventListener('load', (event) => {
       console.log('The page has fully loaded');
       const comments = "{{ page.header.comments|e('js') }}"; // Escape the value for JS safety
-      loadComments("at://did:plc:" + did + "/app.bsky.feed.post/" + comments);
+      const location = "at://did:plc:scmcyemdposb4vuidhztn2ui/app.bsky.feed.post/" + comments; 
+      const options = { "renderOptions": { "mergeChains": true }}; // Merge chained Replies
+      loadComments(location, options);
     });
   </script>
+</div>
 ```
+Shown here is a renderOption called **mergeChains** which merges chained replies from the same author as if they were one bigger post. They will automatically divide if a reply comes into the middle of a chain.  This option, while cool, is barely tested and is off by default.
 
-This also shows a situation where I got my DID set as a public variable so I don't have to worry about it. All I need is my post ID.
+This example also shows a situation where I got my DID hardcoded so I don't have to worry about it. All I need is my post ID.
 
 The only other important thing is having a div with the id `comments-container`, which will get filled up once everything is pulled down and processed.
 

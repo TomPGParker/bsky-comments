@@ -5,6 +5,7 @@ let reply  = `<svg xmlns="http://www.w3.org/2000/svg" fill="#7FBADC" viewBox="0 
 
 let postTemplate   = null; // Change by doing something like: loadCommentTemplate("comments.template.html")
 let headerTemplate = null; // Same Deal, but with loadHeaderTemplate
+let subTemplate  = null; // For chaining same author replies
 
 function escapeHTML(str) {
   return String(str)
@@ -21,6 +22,10 @@ async function loadCommentTemplate(url) {
 
 async function loadHeaderTemplate(url) {
   headerTemplate = await loadTemplate(url);
+}
+
+async function loadSubTemplate(url) {
+  subTemplate = await loadTemplate(url);
 }
 
 // loads optional templates
@@ -254,6 +259,8 @@ async function loadComments(rootPostId, options={}) {
   // if options contains a "sortOptions" key, its value is passed to sortComments
   function renderComments(comments, container, hiddenReplies, options={}) {
     const orderedComments = sortComments(comments, options?.sortOptions);
+    const merge = options?.mergeChains || false; 
+    console.log(options);
 
     orderedComments.forEach(comment => {
       if (!comment.post) {
@@ -267,14 +274,68 @@ async function loadComments(rootPostId, options={}) {
         return;
       }
 
-      container.appendChild(renderPost(comment));
+      // Check if the post has only one reply and it's from the same author
+      if ( merge && comment.replies && comment.replies.length === 1 && comment.replies[0].post.author.did === comment.post.author.did) {
+        let concatenatedText = comment.post.record.text;
+        let currentComment = comment;
 
-      // Recursively pull out replies to replies
-      if (comment.replies && comment.replies.length > 0) {
-        const repliesContainer = document.createElement("div");
-        repliesContainer.classList.add("comment-replies");
-        renderComments(sortCommentsByTime(comment.replies, options?.sortOptions), repliesContainer, hiddenReplies, options);
-        container.appendChild(repliesContainer);
+        // Concatenate the replies into a single message with <br> tags
+        while (currentComment.replies && currentComment.replies.length === 1 && currentComment.replies[0].post.author.did === currentComment.post.author.did) {
+          const template = subTemplate || `
+            <div class="subcomment"><a href="{{url}}">↪ {{date}}</a></div>
+            {{text}}
+            {{embeds}}
+          `;
+
+          // Prep Embeds
+          const embedsHTML = renderEmbeds(currentComment.replies[0].post.embed)?.outerHTML || "";
+
+          concatenatedText += template
+            .replace(/{{avatar}}/g, currentComment.replies[0].post.author.avatar || "")
+            .replace(/{{name}}/g, escapeHTML(currentComment.replies[0].post.author.displayName || currentComment.replies[0].post.author.handle || "Unknown"))
+            .replace(/{{handle}}/g, currentComment.replies[0].post.author.handle || "")
+            .replace(/{{text}}/g, escapeHTML(currentComment.replies[0].post.record.text || ""))
+            .replace(/{{date}}/g, new Date(currentComment.replies[0].post.record.createdAt || Date.now()).toLocaleString())
+            .replace(/{{url}}/g, convertURI(currentComment.replies[0].post.uri))
+            .replace(/{{embeds}}/g, embedsHTML);
+
+          currentComment = currentComment.replies[0];
+        }
+
+        // Render the concatenated message as a single comment
+        const concatenatedComment = {
+          ...comment,
+          post: {
+            ...comment.post,
+            record: {
+              ...comment.post.record,
+              text: concatenatedText
+            }
+          },
+          replies: currentComment.replies // Continue with remaining replies
+        };
+
+        const postElement = renderPost(concatenatedComment);
+        postElement.querySelector('.comment-text').innerHTML = concatenatedText; // Use innerHTML to render <br> tags
+        container.appendChild(postElement);
+
+        // Recursively render remaining replies
+        if (currentComment.replies && currentComment.replies.length > 0) {
+          const repliesContainer = document.createElement("div");
+          repliesContainer.classList.add("comment-replies");
+          renderComments(sortCommentsByTime(currentComment.replies, options?.sortOptions), repliesContainer, hiddenReplies, options);
+          container.appendChild(repliesContainer);
+        }
+      } else {
+        container.appendChild(renderPost(comment));
+
+        // Recursively pull out replies to replies
+        if (comment.replies && comment.replies.length > 0) {
+          const repliesContainer = document.createElement("div");
+          repliesContainer.classList.add("comment-replies");
+          renderComments(sortCommentsByTime(comment.replies, options?.sortOptions), repliesContainer, hiddenReplies, options);
+          container.appendChild(repliesContainer);
+        }
       }
     });
   }
