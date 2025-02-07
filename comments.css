@@ -141,5 +141,6 @@ p.comment-text {
 }
 
 .comment-repost .comment-avatar {
-    height: 40px;
+    height: calc(var(--icon-size) / 0.66666);
+    width: calc(var(--icon-size) / 0.66666);
 }
