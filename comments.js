@@ -39,20 +39,25 @@ async function loadTemplate(url) {
 async function discoverPost(authorHandle, options={}) {
   const currentUrl = options.renderOptions?.discoverURL || window.location.href;
   const discoverType = options.renderOptions?.discoverType || "oldest";
-  const apiUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=*&url=${encodeURIComponent(
-    currentUrl
-  )}&author=${authorHandle}&sort=${discoverType}`;
+  const apiUrl = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${authorHandle}&filter=posts_no_replies`;
   console.log(apiUrl);
   try {
     const response = await fetch(apiUrl);
     const data = await response.json();
 
-    if (data.posts && data.posts.length > 0) {
-      // "oldest" isn't real, so sending sort=oldest just gives us Latest, so we take the last post.
-      const post = discoverType === "oldest" ? data.posts[data.posts.length - 1] : data.posts[0];
-      loadComments(post.uri, options);
-    } else {
-      console.log('No matching post found linking to ' + currentUrl);
+    if (data.feed)
+    {
+      let postIndex = data.feed.findIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+      let post = data.feed[postIndex].post
+      if (postIndex > -1)
+      {
+        console.log('Found the post at: ' + post.uri);
+        loadComments(post.uri, options);
+      }
+      else
+      {
+        console.log('No matching post found linking to ' + currentUrl);
+      }
     }
   } catch (err) {
     console.log('Error attempting to fetch post at ' + currentUrl);
