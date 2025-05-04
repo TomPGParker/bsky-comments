@@ -48,17 +48,18 @@ async function discoverPost(authorHandle, options={}) {
     if (data.feed)
     {
       let postIndex = -1;
-      if (discoverType == "oldest")
+      if (discoverType == "latest")
         {
-          postIndex = data.feed.findLastIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+          postIndex = data.feed.findIndex(element => element.post.record.facets?.[0].features?.[0].uri === currentUrl);
         }
-      else if (discoverType == "latest")
+      //defeault to "oldest" sorting method
+      else
         {
-          postIndex = data.feed.findIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+          postIndex = data.feed.findLastIndex(element => element.post.record.facets?.[0].features?.[0].uri === currentUrl);
         }
-      let post = data.feed[postIndex].post
       if (postIndex > -1)
       {
+        let post = data.feed[postIndex].post
         console.log('Found the post at: ' + post.uri);
         loadComments(post.uri, options);
       }
@@ -68,7 +69,7 @@ async function discoverPost(authorHandle, options={}) {
       }
     }
   } catch (err) {
-    console.log('Error attempting to fetch post at ' + currentUrl);
+    console.log('Error attempting to fetch post at ' + currentUrl + '. Error: ' + err);
   }
 }
 
