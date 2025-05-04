@@ -47,7 +47,15 @@ async function discoverPost(authorHandle, options={}) {
 
     if (data.feed)
     {
-      let postIndex = data.feed.findIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+      let postIndex = -1;
+      if (discoverType == "oldest")
+        {
+          postIndex = data.feed.findLastIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+        }
+      else if (discoverType == "latest")
+        {
+          postIndex = data.feed.findIndex(element => element.post.record.facets?.[0].features?.[0].uri === encodeURIComponent);
+        }
       let post = data.feed[postIndex].post
       if (postIndex > -1)
       {
